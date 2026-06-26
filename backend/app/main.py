@@ -21,10 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In production, serve the built frontend from ../frontend/dist
-FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+# In production, serve the built frontend from backend/static/
+FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.isdir(FRONTEND_DIST):
-    # API routes take precedence, then fallback to static SPA
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
 
 
