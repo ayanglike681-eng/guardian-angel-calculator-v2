@@ -21,12 +21,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In production, serve the built frontend from backend/static/
-FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "..", "static")
-if os.path.isdir(FRONTEND_DIST):
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
-
-
 @app.post("/api/calculate", response_model=CalculateResponse)
 def calculate(request: CalculateRequest):
     if not request.name or not request.name.strip():
@@ -55,3 +49,9 @@ def calculate_chinese(request: CalculateChineseRequest):
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# In production, serve the built frontend from backend/static/ (must be AFTER all route definitions)
+FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "..", "static")
+if os.path.isdir(FRONTEND_DIST):
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
