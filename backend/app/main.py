@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from app.models import CalculateRequest, CalculateChineseRequest, CalculateResponse
 from app.calculator import process_angel_data, process_chinese_angel_data
 import logging
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---- API Routes --------------------------------------------------
 @app.post("/api/calculate", response_model=CalculateResponse)
 def calculate(request: CalculateRequest):
     if not request.name or not request.name.strip():
@@ -51,7 +53,19 @@ def health():
     return {"status": "ok"}
 
 
-# In production, serve the built frontend from backend/static/ (must be AFTER all route definitions)
+# ---- Static Assets & SPA Fallback (production) --------------------
 FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "..", "static")
+
 if os.path.isdir(FRONTEND_DIST):
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+    # Serve hashed assets (JS, CSS, images) from /assets/
+    assets_dir = os.path.join(FRONTEND_DIST, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    # Catch-all: serve index.html for any unmatched route (SPA fallback)
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        index_file = os.path.join(FRONTEND_DIST, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        raise HTTPException(status_code=404, detail="Not Found")
